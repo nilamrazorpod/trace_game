@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:trace_game/screens/selected.dart';
-import 'package:trace_game/screens/trace_game_screen.dart';
+import 'package:trace_game/screens/trace_game/trace_game_screen.dart';
+import 'build_the_word/build_the_word_screen.dart' show BuildTheWord, BuildTheWordScreen;
 
 enum Language { hiragana, katakana, english }
 
@@ -8,11 +8,13 @@ Language selectedLanguage = Language.hiragana;
 int? selectedRow;
 
 class PlayAndBuildScreen extends StatefulWidget {
+  const PlayAndBuildScreen({super.key});
+
   @override
-  _PlayAndBuildScreenState createState() => _PlayAndBuildScreenState();
+  PlayAndBuildScreenState createState() => PlayAndBuildScreenState();
 }
 
-class _PlayAndBuildScreenState extends State<PlayAndBuildScreen> {
+class PlayAndBuildScreenState extends State<PlayAndBuildScreen> {
   int? selectedTab;
   int? selectedRow;
 
@@ -66,23 +68,6 @@ class _PlayAndBuildScreenState extends State<PlayAndBuildScreen> {
     }
   }
 
-  // void handleSubmit() {
-  //   if (selectedTab == 0) {
-  //     Navigator.push(
-  //       context,
-  //       MaterialPageRoute(builder: (_) => TraceGameScreen(
-  //         script: selectedLanguage, // pass the selected language/script
-  //         characterRowIndex: selectedRow!, // pass selected row index
-  //       )),
-  //     );
-  //   } else {
-  //     Navigator.push(
-  //       context,
-  //       MaterialPageRoute(builder: (_) => BuildResultScreen()),
-  //     );
-  //   }
-  // }
-
   void handleSubmit() {
     if (selectedTab == 0 && selectedRow != null) {
       Navigator.push(
@@ -90,15 +75,36 @@ class _PlayAndBuildScreenState extends State<PlayAndBuildScreen> {
         MaterialPageRoute(
           builder: (_) => TraceGameScreen(
             characters: currentCharSet[selectedRow!],
-            language: selectedLanguage,
+            language: selectedLanguage, // Convert enum to string
           ),
         ),
       );
     } else {
+
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => BuildResultScreen()),
+        MaterialPageRoute(
+          builder: (_) => BuildTheWordScreen(
+           // selectedWord: currentCharSet[selectedRow!][0], // First character from selected row
+           //script: selectedLanguage.name,
+
+          // characters: currentCharSet[selectedRow!],
+          //  language: selectedLanguage, // Convert enum to string
+          ),
+        ),
       );
+      // Navigator.push(
+      //   context,
+      //   MaterialPageRoute(
+      //     builder: (_) => BuildTheWord(
+      //      // selectedWord: currentCharSet[selectedRow!][0], // First character from selected row
+      //      //script: selectedLanguage.name,
+      //
+      //      characters: currentCharSet[selectedRow!],
+      //       language: selectedLanguage, // Convert enum to string
+      //     ),
+      //   ),
+      // );
     }
   }
 
@@ -122,23 +128,27 @@ class _PlayAndBuildScreenState extends State<PlayAndBuildScreen> {
             color: Color(0xFF9C6EF6),
             padding: EdgeInsets.symmetric(vertical: 16),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                SizedBox(width: 30,),
                 _StatIcon(
                   icon: Icons.local_fire_department,
                   value: '4',
                   color: Color(0xFFFF7A00), // orange/red for fire
                 ),
+                SizedBox(width: 40,),
                 _StatIcon(
                   icon: Icons.star,
                   value: '230',
                   color: Color(0xFFFFD600), // yellow for star
                 ),
+                SizedBox(width: 40,),
                 _StatIcon(
                   icon: Icons.diamond,
                   value: '25',
                   color: Color(0xFF00B6FF), // blue for diamond
                 ),
+                SizedBox(width: 40,),
                 _StatIcon(
                   icon: Icons.energy_savings_leaf,
                   value: '1',
@@ -211,11 +221,13 @@ class _PlayAndBuildScreenState extends State<PlayAndBuildScreen> {
                         width: selectedTab == 0 ? 0 : 1,
                       ),
                     ),
-                    child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 6,bottom: 6, left: 10,right: 180),
                       child: Text(
                         '🖊️ Trace the Characters',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
+                          fontSize: 16,
                           color: selectedTab == 0
                               ? Color(0xFF6C3EC1)
                               : Colors.black,
@@ -246,7 +258,8 @@ class _PlayAndBuildScreenState extends State<PlayAndBuildScreen> {
                         width: selectedTab == 1 ? 0 : 1,
                       ),
                     ),
-                    child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 6,bottom: 6, left: 10,right: 205),
                       child: Text(
                         '🧩 Build the Characters',
                         style: TextStyle(
@@ -271,6 +284,7 @@ class _PlayAndBuildScreenState extends State<PlayAndBuildScreen> {
                 child: Text('Select the row you want', style: TextStyle(fontSize: 16)),
               ),
             ),
+
             SizedBox(height: 8),
             Expanded(
               child: Padding(
@@ -288,47 +302,53 @@ class _PlayAndBuildScreenState extends State<PlayAndBuildScreen> {
                         onTap: () {
                           setState(() {
                             selectedRow = rowIdx;
+
                           });
                         },
-                        child: Row(
+                        child: Column(
                           children: [
-                            SizedBox(
-                              width: 32,
-                              child: Center(
-                                child: Text(
-                                  rowLabels[rowIdx],
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            ...List.generate(currentCharSet[rowIdx].length, (colIdx) {
-                              bool isSelected = selectedRow == rowIdx;
-                              return Expanded(
-                                child: Container(
-                                  margin: EdgeInsets.all(4),
-                                  decoration: BoxDecoration(
-                                    color: isSelected ? Colors.green[200] : Colors.grey[100],
-                                    borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(
-                                      color: Colors.grey[300]!,
-                                    ),
-                                  ),
-                                  padding: EdgeInsets.symmetric(vertical: 14),
+                            Row(
+                              children: [
+                                SizedBox(
+                                  width: 32,
                                   child: Center(
                                     child: Text(
-                                      currentCharSet[rowIdx][colIdx],
+                                      rowLabels[rowIdx],
                                       style: TextStyle(
-                                        fontSize: 22,
-                                        color: Colors.black,
+                                        color: Colors.grey[600],
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                   ),
                                 ),
-                              );
-                            }),
+                                ...List.generate(currentCharSet[rowIdx].length, (colIdx) {
+                                  bool isSelected = selectedRow == rowIdx;
+                                  return Expanded(
+                                    child: Container(
+                                      margin: EdgeInsets.all(4),
+                                      decoration: BoxDecoration(
+                                        color: isSelected ? Colors.green[200] : Colors.grey[100],
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(
+                                          color: Colors.grey[300]!,
+                                        ),
+                                      ),
+                                      padding: EdgeInsets.symmetric(vertical: 14),
+                                      child: Center(
+                                        child: Text(
+                                          currentCharSet[rowIdx][colIdx],
+                                          style: TextStyle(
+                                            fontSize: 22,
+                                            color: Colors.black,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+
+                                }),
+                              ],
+                            ),
                           ],
                         ),
                       );
@@ -393,6 +413,8 @@ class _StatIcon extends StatelessWidget {
 
 // Dummy Trace Result Screen
 class TraceResultScreen extends StatelessWidget {
+  const TraceResultScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -406,6 +428,8 @@ class TraceResultScreen extends StatelessWidget {
 
 // Dummy Build Result Screen
 class BuildResultScreen extends StatelessWidget {
+  const BuildResultScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

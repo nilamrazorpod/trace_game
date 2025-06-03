@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:trace_game/screens/play_and_build.dart';
-import 'package:trace_game/screens/trace_game_screen.dart';
 
-import 'my demo.dart';
 
 void main() {
   runApp(const MyApp());
@@ -35,7 +33,6 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
       home: PlayAndBuildScreen(),
-      //home: const TraceGameScreen(),
     );
   }
 }

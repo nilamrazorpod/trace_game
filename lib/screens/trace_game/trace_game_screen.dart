@@ -4,7 +4,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:trace_game/screens/play_and_build.dart';
-import '../utils/enums.dart';
+import '../../utils/enums.dart';
 
 class TraceGameScreen extends StatefulWidget {
   final List<String> characters;
@@ -22,7 +22,7 @@ class TraceGameScreen extends StatefulWidget {
 
 class _TraceGameScreenState extends State<TraceGameScreen> {
   Script currentScript = Script.hiragana;
-  int selectedIndex = -1;
+  int selectedIndex = 0;
   Offset penPosition = const Offset(0, 0);
   bool penInitialized = false;
   List<Offset?> tracePoints = [];
@@ -36,32 +36,71 @@ class _TraceGameScreenState extends State<TraceGameScreen> {
   final katakanaChoices = ['ア', 'イ', 'ウ', 'エ', 'オ'];
   final englishChoices = ['A', 'I', 'U', 'E', 'O'];
 
-  final romaji = ['a', 'i', 'u', 'e', 'o'];
+  // Define words by language somewhere centrally
+  Map<Language, List<String>> languageWords = {
+    Language.hiragana: ['あ', 'い', 'う', 'え', 'お'],
+    Language.katakana: ['ア', 'イ', 'ウ', 'エ', 'オ'],
+    Language.english: ['A', 'I', 'U', 'E', 'O'],
+  };
+
+
+  void changeLanguage(Language newLang) {
+    setState(() {
+      selectedLanguage = newLang;
+      wordCharacters = languageWords[newLang]!;
+      choices = wordCharacters;
+      selectedIndex = -1;
+      tracePoints.clear();
+      fillChar = false;
+      penInitialized = false;
+      mainChar = choices.isNotEmpty ? choices[0] : '';
+
+      switch (newLang) {
+        case Language.hiragana:
+          currentScript = Script.hiragana;
+          break;
+        case Language.katakana:
+          currentScript = Script.katakana;
+          break;
+        case Language.english:
+          currentScript = Script.english;
+          break;
+      }
+
+      romaji = choices.map((c) {
+        switch (c) {
+          case 'あ':
+          case 'ア':
+          case 'A':
+            return 'a';
+          case 'い':
+          case 'イ':
+          case 'I':
+            return 'i';
+          case 'う':
+          case 'ウ':
+          case 'U':
+            return 'u';
+          case 'え':
+          case 'エ':
+          case 'E':
+            return 'e';
+          case 'お':
+          case 'オ':
+          case 'O':
+            return 'o';
+          default:
+            return '';
+        }
+      }).toList();
+    });
+  }
+
+
 
   bool fillChar = false;
-
-  String get mainChar {
-    switch (currentScript) {
-      case Script.hiragana:
-        return hiraganaChar;
-      case Script.katakana:
-        return katakanaChar;
-      case Script.english:
-        return englishChar;
-    }
-  }
-
-  List<String> get choices {
-    switch (currentScript) {
-      case Script.hiragana:
-        return hiraganaChoices;
-      case Script.katakana:
-        return katakanaChoices;
-      case Script.english:
-        return englishChoices;
-    }
-  }
-
+  late String mainChar; // The character to draw initially
+  late List<String> choices;
   Path getCharPath(Size size) {
     return Path(); // Use actual path if needed
   }
@@ -91,37 +130,11 @@ class _TraceGameScreenState extends State<TraceGameScreen> {
   final FlutterTts flutterTts = FlutterTts();
   bool isPlaying = false;
 
-  Future<void> speakSelected() async {
-    if (isPlaying) {
-      await flutterTts.stop();
-      setState(() {
-        isPlaying = false;
-      });
-      return;
-    }
 
-    String textToSpeak =
-    selectedIndex != -1 ? choices[selectedIndex] : choices[0];
-
-    if (currentScript == Script.hiragana || currentScript == Script.katakana) {
-      await flutterTts.setLanguage('ja-JP');
-    } else {
-      await flutterTts.setLanguage('en-US');
-    }
-
-    await flutterTts.setSpeechRate(0.4);
-    await flutterTts.setVolume(1.0);
-    await flutterTts.setPitch(1.0);
-
-    await flutterTts.speak(textToSpeak);
-    setState(() {
-      isPlaying = true;
-    });
-  }
-  late AnimationController _animationController;
-  late Animation<double> _strokeAnimation;
   late List<String> wordCharacters;
   late Language selectedLanguage;
+  List<String> romaji = [];
+
 
   @override
   void initState() {
@@ -143,8 +156,24 @@ class _TraceGameScreenState extends State<TraceGameScreen> {
       });
     });
 
+    romaji = widget.characters.map((c) {
+      // Simple mock: you should replace this with actual romaji data
+      switch (c) {
+        case 'あ': return 'a';
+        case 'い': return 'i';
+        case 'う': return 'u';
+        case 'え': return 'e';
+        case 'お': return 'o';
+      // Add others as needed
+        default: return '';
+      }
+    }).toList();
+
     wordCharacters = widget.characters;
     selectedLanguage = widget.language;
+    choices = widget.characters;
+    mainChar = choices[0]; // First character as default
+
 
   }
 
@@ -171,75 +200,111 @@ class _TraceGameScreenState extends State<TraceGameScreen> {
             padding: const EdgeInsets.only(top: 16, left: 16, right: 16),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  currentScript == Script.hiragana
-                      ? 'Hiragana'
-                      : currentScript == Script.katakana
-                      ? 'Katakana'
-                      : 'English',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  selectedLanguage == Language.hiragana
+                      ? "Switch to Katakana"
+                      : selectedLanguage == Language.katakana
+                      ? "Switch to English"
+                      : "Switch to Hiragana",
+                  style: TextStyle(color: Colors.black),
                 ),
-                const Spacer(),
+
+                // const Spacer(),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    PopupMenuButton<Script>(
-                      onSelected: (script) {
-                        setState(() {
-                          currentScript = script;
-                          penInitialized = false;
-                          tracePoints = [];
-                          selectedIndex = -1;
-                          fillChar = false;
-                        });
-                      },
-                      itemBuilder: (context) => [
-                        const PopupMenuItem(
-                          value: Script.hiragana,
-                          child: Text('Hiragana あ'),
+                    Padding(
+                      padding: EdgeInsets.only(left: 100),
+                      child: Container(
+                        height: 35,
+                        decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(5),
+                            border: Border.all(color: Colors.black)
                         ),
-                        const PopupMenuItem(
-                          value: Script.katakana,
-                          child: Text('Katakana ア'),
+                        child: GestureDetector(
+                          onTap: () {
+                            if (selectedLanguage == Language.hiragana) {
+                              changeLanguage(Language.katakana);
+                            } else if (selectedLanguage == Language.katakana) {
+                              changeLanguage(Language.english);
+                            } else {
+                              changeLanguage(Language.hiragana);
+                            }
+                          },
+                          child: Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(
+                                selectedLanguage == Language.hiragana
+                                    ? "Switch to Katakana"
+                                    : selectedLanguage == Language.katakana
+                                    ? "Switch to English"
+                                    : "Switch to Hiragana",
+                                style: TextStyle(color: Colors.black),
+                              ),
+                            ),
+                          ),
                         ),
-                        const PopupMenuItem(
-                          value: Script.english,
-                          child: Text('English A'),
-                        ),
-                      ],
-                      child: OutlinedButton(
-                        onPressed: null,
+                      ),
+                    ),
+
+                    // PopupMenuButton<Script>(
+                    //   onSelected: (script) {
+                    //     setState(() {
+                    //       currentScript = script;
+                    //       penInitialized = false;
+                    //       tracePoints = [];
+                    //       selectedIndex = -1;
+                    //       fillChar = false;
+                    //     });
+                    //   },
+                    //   itemBuilder: (context) => [
+                    //     const PopupMenuItem(
+                    //       value: Script.hiragana,
+                    //       child: Text('Hiragana あ'),
+                    //     ),
+                    //     const PopupMenuItem(
+                    //       value: Script.katakana,
+                    //       child: Text('Katakana ア'),
+                    //     ),
+                    //     const PopupMenuItem(
+                    //       value: Script.english,
+                    //       child: Text('English A'),
+                    //     ),
+                    //   ],
+                    //   child: OutlinedButton(
+                    //     onPressed: null,
+                    //     style: OutlinedButton.styleFrom(
+                    //       foregroundColor: Colors.black,
+                    //       side: const BorderSide(color: Colors.grey),
+                    //       shape: RoundedRectangleBorder(
+                    //         borderRadius: BorderRadius.circular(8),
+                    //       ),
+                    //     ),
+                    //     child: Text(
+                    //       currentScript == Script.hiragana
+                    //           ? 'Switch to Katakana ア'
+                    //           : currentScript == Script.katakana
+                    //           ? 'Switch to English A'
+                    //           : 'Switch to Hiragana あ',
+                    //       style: const TextStyle(color: Colors.black),
+                    //     ),
+                    //   ),
+                    // ),
+                    Padding(
+                      padding: EdgeInsets.only(left: 100),
+                      child: OutlinedButton.icon(
+                        onPressed: () {},
+                        label: const Text('See the Grids'),
+                        icon: const Icon(Icons.grid_on, size: 18),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.black,
                           side: const BorderSide(color: Colors.grey),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
-                        ),
-                        child: Text(
-                          currentScript == Script.hiragana
-                              ? 'Switch to Katakana ア'
-                              : currentScript == Script.katakana
-                              ? 'Switch to English A'
-                              : 'Switch to Hiragana あ',
-                          style: const TextStyle(color: Colors.black),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    OutlinedButton.icon(
-                      onPressed: () {},
-                      label: const Text('See the Grids'),
-                      icon: const Icon(Icons.grid_on, size: 18),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.black,
-                        side: const BorderSide(color: Colors.grey),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
                         ),
                       ),
                     ),
@@ -256,7 +321,7 @@ class _TraceGameScreenState extends State<TraceGameScreen> {
                 padding: const EdgeInsets.only(left: 16),
                 child: IconButton(
                   icon: Icon(isPlaying ? Icons.pause : Icons.volume_up),
-                  onPressed: speakSelected,
+                  onPressed: (){},
                   color: Colors.black87,
                   iconSize: 32,
                   tooltip: 'Play audio',
@@ -288,7 +353,8 @@ class _TraceGameScreenState extends State<TraceGameScreen> {
                     resetPen(areaSize);
                   });
                 }
-                return Stack(
+                return
+                  Stack(
                   children: [
                     CustomPaint(
                       size: areaSize,
@@ -296,13 +362,12 @@ class _TraceGameScreenState extends State<TraceGameScreen> {
                         getCharPath(areaSize),
                         getStrokeGuideRect(areaSize),
                         tracePoints,
-                        selectedIndex != -1
-                            ? choices[selectedIndex]
-                            : mainChar,
+                        selectedIndex != -1 ? choices[selectedIndex] : mainChar,
                         currentScript,
                         fillChar,
                       ),
                     ),
+
                     GestureDetector(
                       onPanUpdate: (details) {
                         RenderBox box =
@@ -330,63 +395,65 @@ class _TraceGameScreenState extends State<TraceGameScreen> {
             ),
           ),
           const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: widget.characters
-                .asMap()
-                .entries
-                .map(
-                  (entry) => GestureDetector(
-                onTap: () {
-                  setState(() {
-                    selectedIndex = entry.key;
-                    tracePoints = [];
-                    fillChar = false;
-                    penInitialized = false;
-                  });
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border.all(
-                      color: selectedIndex == entry.key
-                          ? Colors.deepPurple
-                          : Colors.grey[300]!,
-                      width: selectedIndex == entry.key ? 2 : 1,
+          Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: widget.characters
+                  .asMap()
+                  .entries
+                  .map(
+                    (entry) => GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      selectedIndex = entry.key;
+                      tracePoints.clear();
+                      fillChar = false;
+                      penInitialized = false;
+                    });
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      border: Border.all(
+                        color: selectedIndex == entry.key
+                            ? Colors.deepPurple
+                            : Colors.grey[300]!,
+                        width: selectedIndex == entry.key ? 2 : 1,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 8,
-                    horizontal: 15,
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        entry.value,
-                        style: TextStyle(
-                          fontSize: 26,
-                          color: selectedIndex == entry.key
-                              ? Colors.deepPurple
-                              : Colors.black,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 8,
+                      horizontal: 15,
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          entry.value,
+                          style: TextStyle(
+                            fontSize: 26,
+                            color: selectedIndex == entry.key
+                                ? Colors.deepPurple
+                                : Colors.black,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        ['a', 'i', 'u', 'e', 'o'][entry.key],
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
+                        const SizedBox(height: 4),
+                        Text(
+                          romaji[entry.key],
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            )
-                .toList(),
+              )
+                  .toList(),
+            ),
           ),
-
           const Spacer(),
           // Check button
           Padding(
@@ -557,4 +624,15 @@ class DashedArrowPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant DashedArrowPainter oldDelegate) => false;
+}
+
+
+//auto fill words logic
+class AutoFill extends StatelessWidget {
+  const AutoFill({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column();
+  }
 }

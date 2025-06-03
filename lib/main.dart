@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:trace_game/screens/landing_dashboard/landing_page.dart';
 import 'package:trace_game/screens/play_and_build.dart';
 
 
@@ -32,7 +33,8 @@ class MyApp extends StatelessWidget {
         // tested with just a hot reload.
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: PlayAndBuildScreen(),
+      home: MainScreen(),
+     // home: PlayAndBuildScreen(),
     );
   }
 }

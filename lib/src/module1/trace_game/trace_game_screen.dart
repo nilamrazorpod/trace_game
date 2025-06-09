@@ -1,20 +1,23 @@
-
 import 'dart:math';
 
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_tts/flutter_tts.dart';
-import 'package:trace_game/screens/play_and_build.dart';
-import '../../utils/enums.dart';
+import 'package:flutter/services.dart';
+
+import '../../../utils/enums.dart';
+import '../play_and_build.dart';
 
 class TraceGameScreen extends StatefulWidget {
   final List<String> characters;
   final Language language;
+  final String selectedWord;
 
   const TraceGameScreen({
-    Key? key,
+    super.key,
     required this.characters,
     required this.language,
-  }) : super(key: key);
+    required this.selectedWord,
+  });
 
   @override
   State<TraceGameScreen> createState() => _TraceGameScreenState();
@@ -26,7 +29,6 @@ class _TraceGameScreenState extends State<TraceGameScreen> {
   Offset penPosition = const Offset(0, 0);
   bool penInitialized = false;
   List<Offset?> tracePoints = [];
-
 
   final hiraganaChar = 'あ';
   final katakanaChar = 'ア';
@@ -42,7 +44,6 @@ class _TraceGameScreenState extends State<TraceGameScreen> {
     Language.katakana: ['ア', 'イ', 'ウ', 'エ', 'オ'],
     Language.english: ['A', 'I', 'U', 'E', 'O'],
   };
-
 
   void changeLanguage(Language newLang) {
     setState(() {
@@ -96,8 +97,6 @@ class _TraceGameScreenState extends State<TraceGameScreen> {
     });
   }
 
-
-
   bool fillChar = false;
   late String mainChar; // The character to draw initially
   late List<String> choices;
@@ -127,45 +126,32 @@ class _TraceGameScreenState extends State<TraceGameScreen> {
     });
   }
 
-  final FlutterTts flutterTts = FlutterTts();
   bool isPlaying = false;
-
 
   late List<String> wordCharacters;
   late Language selectedLanguage;
   List<String> romaji = [];
 
-
   @override
   void initState() {
     super.initState();
-    flutterTts.setIosAudioCategory(IosTextToSpeechAudioCategory.playback, [
-      IosTextToSpeechAudioCategoryOptions.defaultToSpeaker,
-      IosTextToSpeechAudioCategoryOptions.mixWithOthers,
-    ], IosTextToSpeechAudioMode.defaultMode);
-
-    flutterTts.setCompletionHandler(() {
-      setState(() {
-        isPlaying = false;
-      });
-    });
-
-    flutterTts.setCancelHandler(() {
-      setState(() {
-        isPlaying = false;
-      });
-    });
 
     romaji = widget.characters.map((c) {
       // Simple mock: you should replace this with actual romaji data
       switch (c) {
-        case 'あ': return 'a';
-        case 'い': return 'i';
-        case 'う': return 'u';
-        case 'え': return 'e';
-        case 'お': return 'o';
-      // Add others as needed
-        default: return '';
+        case 'あ':
+          return 'a';
+        case 'い':
+          return 'i';
+        case 'う':
+          return 'u';
+        case 'え':
+          return 'e';
+        case 'お':
+          return 'o';
+        // Add others as needed
+        default:
+          return '';
       }
     }).toList();
 
@@ -174,7 +160,51 @@ class _TraceGameScreenState extends State<TraceGameScreen> {
     choices = widget.characters;
     mainChar = choices[0]; // First character as default
 
+    playAudioForWord(widget.selectedWord);
+  }
 
+  final player = AudioPlayer();
+
+  final Map<String, String> charToAudio = {
+    'あ': 'music/あ.mp3',
+    'い': 'music/い.mp3',
+    'う': 'music/う.mp3',
+    'え': 'music/え.mp3',
+    'お': 'music/お.mp3',
+
+    'か': 'music/か.mp3',
+    'き': 'music/き.mp3',
+    'く': 'music/く.mp3',
+    'け': 'music/け.mp3',
+    'こ': 'music/お.mp3',
+
+    'さ': 'music/あ.mp3',
+    'し': 'music/い.mp3',
+    'す': 'music/う.mp3',
+    'せ': 'music/え.mp3',
+    'そ': 'music/お.mp3',
+
+    'た': 'music/あ.mp3',
+    'ち': 'music/い.mp3',
+    'つ': 'music/う.mp3',
+    'せ': 'music/え.mp3',
+    'そ': 'music/お.mp3',
+    // Add more as needed
+  };
+
+  void playAudioForWord(String word) async {
+    final audioPath = charToAudio[word];
+    if (audioPath == null) {
+      print('No audio file for $word');
+      return;
+    }
+    try {
+      await rootBundle.load('assets/$audioPath');
+      print('Asset loaded successfully');
+      await player.play(AssetSource(audioPath));
+    } catch (e) {
+      print('Asset load failed: $e');
+    }
   }
 
   @override
@@ -211,17 +241,17 @@ class _TraceGameScreenState extends State<TraceGameScreen> {
                   style: TextStyle(color: Colors.black),
                 ),
 
-                // const Spacer(),
+                const Spacer(),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Padding(
-                      padding: EdgeInsets.only(left: 100),
+                      padding: EdgeInsets.only(left: 90),
                       child: Container(
                         height: 35,
                         decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(5),
-                            border: Border.all(color: Colors.black)
+                          borderRadius: BorderRadius.circular(5),
+                          border: Border.all(color: Colors.black),
                         ),
                         child: GestureDetector(
                           onTap: () {
@@ -250,51 +280,8 @@ class _TraceGameScreenState extends State<TraceGameScreen> {
                       ),
                     ),
 
-                    // PopupMenuButton<Script>(
-                    //   onSelected: (script) {
-                    //     setState(() {
-                    //       currentScript = script;
-                    //       penInitialized = false;
-                    //       tracePoints = [];
-                    //       selectedIndex = -1;
-                    //       fillChar = false;
-                    //     });
-                    //   },
-                    //   itemBuilder: (context) => [
-                    //     const PopupMenuItem(
-                    //       value: Script.hiragana,
-                    //       child: Text('Hiragana あ'),
-                    //     ),
-                    //     const PopupMenuItem(
-                    //       value: Script.katakana,
-                    //       child: Text('Katakana ア'),
-                    //     ),
-                    //     const PopupMenuItem(
-                    //       value: Script.english,
-                    //       child: Text('English A'),
-                    //     ),
-                    //   ],
-                    //   child: OutlinedButton(
-                    //     onPressed: null,
-                    //     style: OutlinedButton.styleFrom(
-                    //       foregroundColor: Colors.black,
-                    //       side: const BorderSide(color: Colors.grey),
-                    //       shape: RoundedRectangleBorder(
-                    //         borderRadius: BorderRadius.circular(8),
-                    //       ),
-                    //     ),
-                    //     child: Text(
-                    //       currentScript == Script.hiragana
-                    //           ? 'Switch to Katakana ア'
-                    //           : currentScript == Script.katakana
-                    //           ? 'Switch to English A'
-                    //           : 'Switch to Hiragana あ',
-                    //       style: const TextStyle(color: Colors.black),
-                    //     ),
-                    //   ),
-                    // ),
                     Padding(
-                      padding: EdgeInsets.only(left: 100),
+                      padding: EdgeInsets.only(left: 80),
                       child: OutlinedButton.icon(
                         onPressed: () {},
                         label: const Text('See the Grids'),
@@ -321,7 +308,13 @@ class _TraceGameScreenState extends State<TraceGameScreen> {
                 padding: const EdgeInsets.only(left: 16),
                 child: IconButton(
                   icon: Icon(isPlaying ? Icons.pause : Icons.volume_up),
-                  onPressed: (){},
+                  onPressed: () {
+                    // Use the selected character or mainChar if nothing is selected
+                    String charToPlay = selectedIndex != -1
+                        ? choices[selectedIndex]
+                        : mainChar;
+                    playAudioForWord(charToPlay);
+                  },
                   color: Colors.black87,
                   iconSize: 32,
                   tooltip: 'Play audio',
@@ -333,28 +326,31 @@ class _TraceGameScreenState extends State<TraceGameScreen> {
                   padding: const EdgeInsets.only(left: 16, bottom: 8),
                   child: Text(
                     'Selected: ${choices[selectedIndex]} (${romaji[selectedIndex]})',
-                    style:
-                    const TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
             ],
           ),
-          SizedBox(height: 10,),
+          SizedBox(height: 10),
           // Tracing area
           SizedBox(
             height: tracingAreaHeight,
             width: double.infinity,
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final areaSize =
-                Size(constraints.maxWidth, constraints.maxHeight);
+                final areaSize = Size(
+                  constraints.maxWidth,
+                  constraints.maxHeight,
+                );
                 if (!penInitialized) {
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     resetPen(areaSize);
                   });
                 }
-                return
-                  Stack(
+                return Stack(
                   children: [
                     CustomPaint(
                       size: areaSize,
@@ -370,10 +366,8 @@ class _TraceGameScreenState extends State<TraceGameScreen> {
 
                     GestureDetector(
                       onPanUpdate: (details) {
-                        RenderBox box =
-                        context.findRenderObject() as RenderBox;
-                        final local =
-                        box.globalToLocal(details.globalPosition);
+                        RenderBox box = context.findRenderObject() as RenderBox;
+                        final local = box.globalToLocal(details.globalPosition);
                         setState(() {
                           tracePoints = List.from(tracePoints)..add(local);
                         });
@@ -404,61 +398,60 @@ class _TraceGameScreenState extends State<TraceGameScreen> {
                   .entries
                   .map(
                     (entry) => GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      selectedIndex = entry.key;
-                      tracePoints.clear();
-                      fillChar = false;
-                      penInitialized = false;
-                    });
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border.all(
-                        color: selectedIndex == entry.key
-                            ? Colors.deepPurple
-                            : Colors.grey[300]!,
-                        width: selectedIndex == entry.key ? 2 : 1,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 8,
-                      horizontal: 15,
-                    ),
-                    child: Column(
-                      children: [
-                        Text(
-                          entry.value,
-                          style: TextStyle(
-                            fontSize: 26,
+                      onTap: () {
+                        setState(() {
+                          selectedIndex = entry.key;
+                          tracePoints.clear();
+                          fillChar = false;
+                          penInitialized = false;
+                        });
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          border: Border.all(
                             color: selectedIndex == entry.key
                                 ? Colors.deepPurple
-                                : Colors.black,
+                                : Colors.grey[300]!,
+                            width: selectedIndex == entry.key ? 2 : 1,
                           ),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          romaji[entry.key],
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
-                          ),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 8,
+                          horizontal: 15,
                         ),
-                      ],
+                        child: Column(
+                          children: [
+                            Text(
+                              entry.value,
+                              style: TextStyle(
+                                fontSize: 26,
+                                color: selectedIndex == entry.key
+                                    ? Colors.deepPurple
+                                    : Colors.black,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              romaji[entry.key],
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              )
+                  )
                   .toList(),
             ),
           ),
           const Spacer(),
           // Check button
           Padding(
-            padding:
-            const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
             child: SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -473,28 +466,32 @@ class _TraceGameScreenState extends State<TraceGameScreen> {
                 onPressed: selectedIndex == -1
                     ? null
                     : () {
-                  bool correct = selectedIndex == 0;
-                  if (correct) {
-                    setState(() {
-                      fillChar = true;
-                    });
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content:
-                        Text('Correct!', style: TextStyle(fontSize: 18)),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content:
-                        Text('Try again!', style: TextStyle(fontSize: 18)),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                },
+                        bool correct = selectedIndex == 0;
+                        if (correct) {
+                          setState(() {
+                            fillChar = true;
+                          });
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Correct!',
+                                style: TextStyle(fontSize: 18),
+                              ),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Try again!',
+                                style: TextStyle(fontSize: 18),
+                              ),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      },
                 child: const Text('Check', style: TextStyle(fontSize: 20)),
               ),
             ),
@@ -514,13 +511,13 @@ class CharacterPainter extends CustomPainter {
   final bool fillChar;
 
   CharacterPainter(
-      this.charPath,
-      this.strokeGuide,
-      this.tracePoints,
-      this.mainChar,
-      this.script,
-      this.fillChar,
-      );
+    this.charPath,
+    this.strokeGuide,
+    this.tracePoints,
+    this.mainChar,
+    this.script,
+    this.fillChar,
+  );
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -540,7 +537,10 @@ class CharacterPainter extends CustomPainter {
 
     textPainter.paint(
       canvas,
-      Offset((size.width - textPainter.width) / 2, (size.height - textPainter.height) / 2),
+      Offset(
+        (size.width - textPainter.width) / 2,
+        (size.height - textPainter.height) / 2,
+      ),
     );
 
     Paint pathPaint = Paint()
@@ -565,9 +565,21 @@ class CharacterPainter extends CustomPainter {
 
       final last = tracePoints.lastWhere((e) => e != null, orElse: () => null);
       if (last != null) {
-        canvas.drawCircle(last, size.height * 0.045, Paint()..color = Colors.black.withOpacity(0.3));
-        canvas.drawCircle(last, size.height * 0.028, Paint()..color = Colors.white);
-        canvas.drawCircle(last, size.height * 0.017, Paint()..color = Colors.black87);
+        canvas.drawCircle(
+          last,
+          size.height * 0.045,
+          Paint()..color = Colors.black.withOpacity(0.3),
+        );
+        canvas.drawCircle(
+          last,
+          size.height * 0.028,
+          Paint()..color = Colors.white,
+        );
+        canvas.drawCircle(
+          last,
+          size.height * 0.017,
+          Paint()..color = Colors.black87,
+        );
       }
     }
   }
@@ -575,9 +587,9 @@ class CharacterPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CharacterPainter oldDelegate) =>
       oldDelegate.tracePoints != tracePoints ||
-          oldDelegate.mainChar != mainChar ||
-          oldDelegate.script != script ||
-          oldDelegate.fillChar != fillChar;
+      oldDelegate.mainChar != mainChar ||
+      oldDelegate.script != script ||
+      oldDelegate.fillChar != fillChar;
 }
 
 class DashedArrowPainter extends CustomPainter {
@@ -625,7 +637,6 @@ class DashedArrowPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant DashedArrowPainter oldDelegate) => false;
 }
-
 
 //auto fill words logic
 class AutoFill extends StatelessWidget {

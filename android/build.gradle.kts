@@ -1,3 +1,15 @@
+//buildscript {
+//    repositories {
+//        google()
+//        mavenCentral()
+//    }
+//    dependencies {
+//        // ✅ Google Services plugin for Firebase / Play Games
+//        classpath("com.google.gms:google-services:4.3.15")
+//    }
+//}
+
+
 allprojects {
     repositories {
         google()

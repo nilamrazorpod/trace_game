@@ -15,7 +15,9 @@ class _MainScreenState extends State<MainScreen> {
 
   final List<Widget> _pages = const [
     Center(child: Text("Chapters Page")),
-    PlayAndBuildScreen(),
+    PlayAndBuildScreen(
+      user: null,
+    ),
     HomeScreen(),
     Center(child: Text("Profile Page")),
     Center(child: Text("Settings Page")),

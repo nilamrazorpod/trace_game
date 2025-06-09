@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:trace_game/screens/trace_game/trace_game_screen.dart';
-import 'build_the_word/build_the_word_screen.dart' show BuildTheWord, BuildTheWordScreen;
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:trace_game/app_config/custom_styles.dart';
+import 'package:trace_game/src/module1/trace_game/trace_game_screen.dart';
+
+import '../auth/login.dart';
+import 'build_the_word/build_the_word_screen.dart';
+
+final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email']);
 
 enum Language { hiragana, katakana, english }
 
@@ -8,7 +14,9 @@ Language selectedLanguage = Language.hiragana;
 int? selectedRow;
 
 class PlayAndBuildScreen extends StatefulWidget {
-  const PlayAndBuildScreen({super.key});
+  final GoogleSignInAccount? user;
+
+  const PlayAndBuildScreen({super.key, required this.user});
 
   @override
   PlayAndBuildScreenState createState() => PlayAndBuildScreenState();
@@ -74,40 +82,27 @@ class PlayAndBuildScreenState extends State<PlayAndBuildScreen> {
         context,
         MaterialPageRoute(
           builder: (_) => TraceGameScreen(
+            selectedWord: currentCharSet[selectedRow!][0],
             characters: currentCharSet[selectedRow!],
-            language: selectedLanguage, // Convert enum to string
+            language: selectedLanguage,
           ),
         ),
       );
     } else {
-
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (_) => BuildTheWordScreen(
-           // selectedWord: currentCharSet[selectedRow!][0], // First character from selected row
-           //script: selectedLanguage.name,
+            // selectedWord: currentCharSet[selectedRow!][0], // First character from selected row
+            //script: selectedLanguage.name,
 
-          // characters: currentCharSet[selectedRow!],
-          //  language: selectedLanguage, // Convert enum to string
+            // characters: currentCharSet[selectedRow!],
+            //  language: selectedLanguage, // Convert enum to string
           ),
         ),
       );
-      // Navigator.push(
-      //   context,
-      //   MaterialPageRoute(
-      //     builder: (_) => BuildTheWord(
-      //      // selectedWord: currentCharSet[selectedRow!][0], // First character from selected row
-      //      //script: selectedLanguage.name,
-      //
-      //      characters: currentCharSet[selectedRow!],
-      //       language: selectedLanguage, // Convert enum to string
-      //     ),
-      //   ),
-      // );
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -116,10 +111,21 @@ class PlayAndBuildScreenState extends State<PlayAndBuildScreen> {
       appBar: AppBar(
         centerTitle: true,
         backgroundColor: Color(0xFF9C6EF6),
-        title: Text('Play and Build', style: TextStyle(color: Colors.white)),
+        title: Text('Play and Build', style: CustomTextSty.Text24Stly700),
         elevation: 0,
         leading: Icon(Icons.arrow_back, color: Colors.white),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await _googleSignIn.signOut(); // Use the same instance as login
+
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+              );
+            },
+          ),
         ],
       ),
       body: Column(
@@ -130,25 +136,25 @@ class PlayAndBuildScreenState extends State<PlayAndBuildScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(width: 30,),
+                SizedBox(width: 30),
                 _StatIcon(
                   icon: Icons.local_fire_department,
                   value: '4',
                   color: Color(0xFFFF7A00), // orange/red for fire
                 ),
-                SizedBox(width: 40,),
+                SizedBox(width: 40),
                 _StatIcon(
                   icon: Icons.star,
                   value: '230',
                   color: Color(0xFFFFD600), // yellow for star
                 ),
-                SizedBox(width: 40,),
+                SizedBox(width: 40),
                 _StatIcon(
                   icon: Icons.diamond,
                   value: '25',
                   color: Color(0xFF00B6FF), // blue for diamond
                 ),
-                SizedBox(width: 40,),
+                SizedBox(width: 40),
                 _StatIcon(
                   icon: Icons.energy_savings_leaf,
                   value: '1',
@@ -156,7 +162,6 @@ class PlayAndBuildScreenState extends State<PlayAndBuildScreen> {
                 ),
               ],
             ),
-
           ),
           SizedBox(height: 16),
           Padding(
@@ -169,7 +174,7 @@ class PlayAndBuildScreenState extends State<PlayAndBuildScreen> {
                     height: 35,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.black)
+                      border: Border.all(color: Colors.black),
                     ),
                     child: GestureDetector(
                       onTap: () {
@@ -182,7 +187,8 @@ class PlayAndBuildScreenState extends State<PlayAndBuildScreen> {
                           } else {
                             selectedLanguage = Language.hiragana;
                           }
-                          selectedRow = null; // reset selection on language change
+                          selectedRow =
+                              null; // reset selection on language change
                         });
                       },
                       child: Center(
@@ -197,7 +203,6 @@ class PlayAndBuildScreenState extends State<PlayAndBuildScreen> {
                       ),
                     ),
                   ),
-
                 ),
                 SizedBox(height: 8),
                 // Trace Tab
@@ -205,8 +210,8 @@ class PlayAndBuildScreenState extends State<PlayAndBuildScreen> {
                   onTap: () {
                     setState(() {
                       selectedTab = 0;
-                      selectedRow = null; // Optionally reset row selection when switching tabs
-
+                      selectedRow =
+                          null; // Optionally reset row selection when switching tabs
                     });
                   },
                   child: Container(
@@ -222,16 +227,15 @@ class PlayAndBuildScreenState extends State<PlayAndBuildScreen> {
                       ),
                     ),
                     child: Padding(
-                      padding: const EdgeInsets.only(top: 6,bottom: 6, left: 10,right: 180),
+                      padding: const EdgeInsets.only(
+                        top: 6,
+                        bottom: 6,
+                        left: 10,
+                        right: 100,
+                      ),
                       child: Text(
                         '🖊️ Trace the Characters',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: selectedTab == 0
-                              ? Color(0xFF6C3EC1)
-                              : Colors.black,
-                        ),
+                        style: CustomTextSty.Text20Stly500,
                       ),
                     ),
                   ),
@@ -242,8 +246,8 @@ class PlayAndBuildScreenState extends State<PlayAndBuildScreen> {
                   onTap: () {
                     setState(() {
                       selectedTab = 1;
-                      selectedRow = null; // Optionally reset row selection when switching tabs
-
+                      selectedRow =
+                          null; // Optionally reset row selection when switching tabs
                     });
                   },
                   child: Container(
@@ -259,15 +263,15 @@ class PlayAndBuildScreenState extends State<PlayAndBuildScreen> {
                       ),
                     ),
                     child: Padding(
-                      padding: const EdgeInsets.only(top: 6,bottom: 6, left: 10,right: 205),
+                      padding: const EdgeInsets.only(
+                        top: 6,
+                        bottom: 6,
+                        left: 10,
+                        right: 105,
+                      ),
                       child: Text(
                         '🧩 Build the Characters',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: selectedTab == 1
-                              ? Color(0xFF6C3EC1)
-                              : Colors.black,
-                        ),
+                        style: CustomTextSty.Text20Stly500,
                       ),
                     ),
                   ),
@@ -281,7 +285,10 @@ class PlayAndBuildScreenState extends State<PlayAndBuildScreen> {
               padding: EdgeInsets.symmetric(horizontal: 16),
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: Text('Select the row you want', style: TextStyle(fontSize: 16)),
+                child: Text(
+                  'Select the row you want',
+                  style: TextStyle(fontSize: 16),
+                ),
               ),
             ),
 
@@ -302,7 +309,6 @@ class PlayAndBuildScreenState extends State<PlayAndBuildScreen> {
                         onTap: () {
                           setState(() {
                             selectedRow = rowIdx;
-
                           });
                         },
                         child: Column(
@@ -321,32 +327,40 @@ class PlayAndBuildScreenState extends State<PlayAndBuildScreen> {
                                     ),
                                   ),
                                 ),
-                                ...List.generate(currentCharSet[rowIdx].length, (colIdx) {
-                                  bool isSelected = selectedRow == rowIdx;
-                                  return Expanded(
-                                    child: Container(
-                                      margin: EdgeInsets.all(4),
-                                      decoration: BoxDecoration(
-                                        color: isSelected ? Colors.green[200] : Colors.grey[100],
-                                        borderRadius: BorderRadius.circular(6),
-                                        border: Border.all(
-                                          color: Colors.grey[300]!,
+                                ...List.generate(
+                                  currentCharSet[rowIdx].length,
+                                  (colIdx) {
+                                    bool isSelected = selectedRow == rowIdx;
+                                    return Expanded(
+                                      child: Container(
+                                        margin: EdgeInsets.all(4),
+                                        decoration: BoxDecoration(
+                                          color: isSelected
+                                              ? Colors.green[200]
+                                              : Colors.grey[100],
+                                          borderRadius: BorderRadius.circular(
+                                            6,
+                                          ),
+                                          border: Border.all(
+                                            color: Colors.grey[300]!,
+                                          ),
                                         ),
-                                      ),
-                                      padding: EdgeInsets.symmetric(vertical: 14),
-                                      child: Center(
-                                        child: Text(
-                                          currentCharSet[rowIdx][colIdx],
-                                          style: TextStyle(
-                                            fontSize: 22,
-                                            color: Colors.black,
+                                        padding: EdgeInsets.symmetric(
+                                          vertical: 14,
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            currentCharSet[rowIdx][colIdx],
+                                            style: TextStyle(
+                                              fontSize: 22,
+                                              color: Colors.black,
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                  );
-
-                                }),
+                                    );
+                                  },
+                                ),
                               ],
                             ),
                           ],
@@ -378,7 +392,7 @@ class PlayAndBuildScreenState extends State<PlayAndBuildScreen> {
                 ),
               ),
             ),
-          ]
+          ],
         ],
       ),
     );
@@ -420,7 +434,10 @@ class TraceResultScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text("Trace Result")),
       body: Center(
-        child: Text("You navigated to the Trace Result screen!", style: TextStyle(fontSize: 20)),
+        child: Text(
+          "You navigated to the Trace Result screen!",
+          style: TextStyle(fontSize: 20),
+        ),
       ),
     );
   }
@@ -435,7 +452,10 @@ class BuildResultScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text("Build Result")),
       body: Center(
-        child: Text("You navigated to the Build Result screen!", style: TextStyle(fontSize: 20)),
+        child: Text(
+          "You navigated to the Build Result screen!",
+          style: TextStyle(fontSize: 20),
+        ),
       ),
     );
   }
